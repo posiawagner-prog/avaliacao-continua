@@ -1,6 +1,6 @@
 const NIVEIS = [
-  { key: "defasagem", label: "Defasagem", short: "Defas.", color: "#FF3B30" },
-  { key: "intermediario", label: "Aprendizado intermediário", short: "Intermed.", color: "#FF9500" },
+  { key: "defasagem", label: "Defasagem", short: "Defasagem", color: "#FF3B30" },
+  { key: "intermediario", label: "Aprendizado intermediário", short: "Intermediário", color: "#FF9500" },
   { key: "adequado", label: "Aprendizado adequado", short: "Adequado", color: "#00E676" },
 ];
 
