@@ -455,6 +455,14 @@ const barValueLabels = {
   },
 };
 
+function barSegmentCenter(el) {
+  if (typeof el.getCenterPoint === "function") {
+    return el.getCenterPoint(true);
+  }
+  const { x, y, base } = el.getProps(["x", "y", "base"], true);
+  return { x: (Math.min(x, base) + Math.max(x, base)) / 2, y };
+}
+
 const stackValueLabels = {
   id: "stackValueLabels",
   afterDatasetsDraw(chart) {
@@ -472,9 +480,10 @@ const stackValueLabels = {
       meta.data.forEach((el, i) => {
         const v = Number(ds.data[i]) || 0;
         if (v <= 0 || totals[i] <= 0) return;
-        if (v / totals[i] < 0.08) return;
-        const x = (el.base + el.x) / 2;
-        const y = el.y;
+        const { x: px, base } = el.getProps(["x", "base"], true);
+        const segmentWidth = Math.abs(px - base);
+        if (segmentWidth < 22) return;
+        const { x, y } = barSegmentCenter(el);
         ctx.font = "600 10px DM Sans, system-ui, sans-serif";
         drawOutlinedText(ctx, String(v), x, y, 2.5);
       });
