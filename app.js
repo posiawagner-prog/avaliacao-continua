@@ -86,6 +86,29 @@ function discLabel(d) {
   return DISCIPLINAS[d] || d;
 }
 
+const ESCOLA_LABELS = {
+  "E.M.E.I.F. ANTONIO AGOSTINHO DOS ANJOS": "E.M.E.I.F. ANTÔNIO AGOSTINHO DOS ANJOS",
+  "E.M.E.I.F. BARAO DE ALAGOAS": "E.M.E.I.F. BARÃO DE ALAGOAS",
+  "E.M.E.I.F. BOB PIERCE": "E.M.E.I.F. BOB PIERCE",
+  "E.M.E.I.F. ELISABETH JACOBA MARIA BOGERS": "E.M.E.I.F. ELISABETH JACOBA MARIA BOGERS",
+  "E.M.E.I.F. IMACULADA CONCEICAO": "E.M.E.I.F. IMACULADA CONCEIÇÃO",
+  "E.M.E.I.F. JOSE ALVES DA SILVA": "E.M.E.I.F. JOSÉ ALVES DA SILVA",
+  "E.M.E.I.F. NOSSA SENHORA DE FATIMA": "E.M.E.I.F. NOSSA SENHORA DE FÁTIMA",
+  "E.M.E.I.F. NOSSA SENHORA DE LOURDES": "E.M.E.I.F. NOSSA SENHORA DE LOURDES",
+  "E.M.E.I.F. PEDRO FRANCISCO DAS CHAGAS": "E.M.E.I.F. PEDRO FRANCISCO DAS CHAGAS",
+  "E.M.E.I.F. POSSIDONIO GADI": "E.M.E.I.F. POSSIDÔNIO GADI",
+  "E.M.E.I.F. VEREADOR JOSE DOMINGOS DE BARROS": "E.M.E.I.F. VEREADOR JOSÉ DOMINGOS DE BARROS",
+  "E.M.E.I.F. WASHINGTON SOARES GAIA": "E.M.E.I.F. WASHINGTON SOARES GAIA",
+  "E.M.E.I.F. WELLINGTON PINTO FONTES": "E.M.E.I.F. WELLINGTON PINTO FONTES",
+};
+
+function formatSchoolLabel(name) {
+  if (!name) return "";
+  if (ESCOLA_LABELS[name]) return ESCOLA_LABELS[name];
+  const core = name.replace(/^E\.M\.E\.I\.F\.\s+/i, "").replace(/^EMEIF\s+/i, "").trim();
+  return core ? `E.M.E.I.F. ${core}` : name;
+}
+
 function shortSchool(name) {
   const map = {
     "E.M.E.I.F. ANTONIO AGOSTINHO DOS ANJOS": "Antônio dos Anjos",
@@ -225,7 +248,7 @@ function fillSelects() {
   esc.innerHTML =
     `<option value="">Todas as escolas</option>` +
     escolasUnicas()
-      .map((e) => `<option value="${e}">${shortSchool(e)}</option>`)
+      .map((e) => `<option value="${e}">${formatSchoolLabel(e)}</option>`)
       .join("");
   const turmas = state.escola ? turmasDaEscola(state.escola) : turmasDaEscola("");
   tur.innerHTML =
@@ -284,7 +307,7 @@ function renderChips() {
   const items = [];
   if (state.ano) items.push({ key: "ano", label: anoLabel(state.ano) });
   if (state.disciplina) items.push({ key: "disciplina", label: discLabel(state.disciplina) });
-  if (state.escola) items.push({ key: "escola", label: shortSchool(state.escola) });
+  if (state.escola) items.push({ key: "escola", label: formatSchoolLabel(state.escola) });
   if (state.turma) items.push({ key: "turma", label: `Turma ${state.turma}` });
   if (state.nivel) items.push({ key: "nivel", label: nivelLabel(state.nivel) });
   if (!items.length) {
