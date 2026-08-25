@@ -411,11 +411,15 @@ function toggleTheme() {
   render();
 }
 
+function chartTextColor() {
+  return currentTheme() === "light" ? cssVar("--text") || "#141418" : "#ffffff";
+}
+
 function chartDefaults() {
-  if (typeof Chart === "undefined") return { muted: "#9a9aa3", text: "#fff" };
+  if (typeof Chart === "undefined") return { muted: "#9a9aa3", text: "#ffffff" };
   const muted = cssVar("--muted") || "#9a9aa3";
-  const text = cssVar("--text") || "#fff";
-  Chart.defaults.color = muted;
+  const text = chartTextColor();
+  Chart.defaults.color = text;
   Chart.defaults.borderColor = "transparent";
   Chart.defaults.font.family = "'DM Sans', system-ui, sans-serif";
   return { muted, text };
@@ -425,7 +429,7 @@ function drawOutlinedText(ctx, text, x, y, lineWidth = 3) {
   ctx.save();
   ctx.lineWidth = lineWidth;
   ctx.strokeStyle = currentTheme() === "light" ? "rgba(255,255,255,.9)" : "rgba(0,0,0,.55)";
-  ctx.fillStyle = cssVar("--text") || "#fff";
+  ctx.fillStyle = chartTextColor();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.strokeText(text, x, y);
@@ -603,11 +607,19 @@ function renderComparativo(rows) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { position: "top", align: "end", labels: { boxWidth: 12, usePointStyle: true } },
+        legend: {
+          position: "top",
+          align: "end",
+          labels: { boxWidth: 12, usePointStyle: true, color: chartTextColor() },
+        },
       },
       scales: {
-        x: { grid: { display: false } },
-        y: { beginAtZero: true, grid: { color: "rgba(128,128,128,.15)" }, ticks: { precision: 0 } },
+        x: { grid: { display: false }, ticks: { color: chartTextColor() } },
+        y: {
+          beginAtZero: true,
+          grid: { color: "rgba(128,128,128,.15)" },
+          ticks: { precision: 0, color: chartTextColor() },
+        },
       },
       onClick(_e, els) {
         if (!els.length) return;
@@ -670,11 +682,20 @@ function renderEscolas(rows) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { position: "top", align: "end", labels: { boxWidth: 10, usePointStyle: true } },
+        legend: {
+          position: "top",
+          align: "end",
+          labels: { boxWidth: 10, usePointStyle: true, color: chartTextColor() },
+        },
       },
       scales: {
-        x: { stacked: true, beginAtZero: true, grid: { color: "rgba(128,128,128,.12)" } },
-        y: { stacked: true, grid: { display: false } },
+        x: {
+          stacked: true,
+          beginAtZero: true,
+          grid: { color: "rgba(128,128,128,.12)" },
+          ticks: { color: chartTextColor() },
+        },
+        y: { stacked: true, grid: { display: false }, ticks: { color: chartTextColor() } },
       },
       onClick(_e, els) {
         if (!els.length) return;
@@ -737,12 +758,13 @@ function renderHabilidades(rows) {
         },
       },
       scales: {
-        x: { grid: { display: false } },
+        x: { grid: { display: false }, ticks: { color: chartTextColor() } },
         y: {
           beginAtZero: true,
           max: 100,
           grid: { color: "rgba(128,128,128,.15)" },
           ticks: {
+            color: chartTextColor(),
             callback: (v) => `${v}%`,
           },
         },
