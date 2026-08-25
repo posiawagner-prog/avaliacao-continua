@@ -625,6 +625,22 @@ td.num {
   padding-left: 10px;
   padding-right: 10px;
 }
+th.nivel-defasagem { color: #FF3B30 !important; }
+th.nivel-intermediario { color: #FF9500 !important; }
+th.nivel-adequado { color: #00E676 !important; }
+td.nivel-defasagem { color: #FF3B30; font-weight: 600; }
+td.nivel-intermediario { color: #FF9500; font-weight: 600; }
+td.nivel-adequado { color: #00E676; font-weight: 600; }
+.kpi-title.nivel-defasagem { color: #FF3B30; }
+.kpi-title.nivel-intermediario { color: #FF9500; }
+.kpi-title.nivel-adequado { color: #00E676; }
+.status-card.status-pl span,
+.status-card.status-pl em { color: #FF3B30; }
+.status-card.status-mid span,
+.status-card.status-mid em { color: #FF9500; }
+.status-card.status-flu span,
+.status-card.status-flu em { color: #00E676; }
+.status-card strong { color: var(--text); font-weight: 700; }
 tbody tr:hover { background: var(--hover); }
 tbody tr.clickable { cursor: pointer; }
 

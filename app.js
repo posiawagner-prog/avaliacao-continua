@@ -399,7 +399,7 @@ function renderKPIs(rows) {
         return `
     <article class="kpi has-icon ${state.nivel === c.key ? "active" : ""}" ${canFilter ? `data-nivel="${c.key}"` : ""}>
       ${c.icon}
-      <p class="kpi-title">${c.title}</p>
+      <p class="kpi-title${["defasagem", "intermediario", "adequado"].includes(c.key) ? ` nivel-${c.key}` : ""}">${c.title}</p>
       <p class="kpi-value">${c.value}</p>
       <div class="kpi-foot">${c.pill || ""}<span class="kpi-foot-text">${c.foot || ""}</span></div>
     </article>`;
@@ -917,9 +917,9 @@ function renderTable(rows) {
         <td class="num">${fmt(b.avaliados || 0)}</td>
         <td class="num">${fmtPct(b.participacao || 0)}</td>
         <td class="num">${fmtPct(b.acertoTotal || 0)}</td>
-        <td class="num">${fmt(b.defasagem || 0)}</td>
-        <td class="num">${fmt(b.intermediario || 0)}</td>
-        <td class="num">${fmt(b.adequado || 0)}</td>
+        <td class="num nivel-defasagem">${fmt(b.defasagem || 0)}</td>
+        <td class="num nivel-intermediario">${fmt(b.intermediario || 0)}</td>
+        <td class="num nivel-adequado">${fmt(b.adequado || 0)}</td>
         <td class="num">${pred ? `<span class="tag" style="--tag:${pred.color}">${pred.short}</span>` : "—"}</td>
       </tr>`;
     })
