@@ -486,24 +486,47 @@ function barSegmentCenter(el) {
   return { x: (Math.min(x, base) + Math.max(x, base)) / 2, y };
 }
 
+function drawStackLabelText(ctx, text, x, y, lineWidth = 0.8) {
+  ctx.save();
+  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = currentTheme() === "light" ? "rgba(255,255,255,.75)" : "rgba(0,0,0,.35)";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.strokeText(text, x, y);
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
 function fitStackLabelFont(ctx, text, segmentWidth, barHeight) {
   const label = String(text);
-  const maxW = Math.max(segmentWidth - 6, 0);
-  const maxH = Math.max((barHeight || 18) - 4, 0);
-  if (maxW < 5 || maxH < 5) return null;
+  if (segmentWidth <= 0) return null;
 
-  let fontSize = Math.min(10, maxH * 0.72);
+  const narrow = segmentWidth < 22;
+  const pad = narrow ? 2 : 4;
+  const maxW = Math.max(segmentWidth - pad, 2);
+  const maxH = Math.max((barHeight || 18) - 2, 4);
+  const minSize = narrow ? 4.5 : 6;
+
+  let fontSize = narrow
+    ? Math.min(maxH * 0.78, segmentWidth * 0.42, 9)
+    : Math.min(10, maxH * 0.72);
+  fontSize = Math.max(minSize, fontSize);
   ctx.font = `600 ${fontSize}px DM Sans, system-ui, sans-serif`;
-  while (fontSize > 6 && ctx.measureText(label).width > maxW) {
-    fontSize -= 0.5;
+
+  while (fontSize > minSize && ctx.measureText(label).width > maxW) {
+    fontSize -= 0.25;
     ctx.font = `600 ${fontSize}px DM Sans, system-ui, sans-serif`;
   }
 
-  if (ctx.measureText(label).width > maxW && maxW < 8) return null;
+  if (ctx.measureText(label).width > maxW) {
+    fontSize = minSize;
+    ctx.font = `600 ${fontSize}px DM Sans, system-ui, sans-serif`;
+  }
 
   return {
     font: ctx.font,
-    lineWidth: Math.max(0.55, fontSize * 0.12),
+    lineWidth: Math.max(0.35, fontSize * 0.09),
   };
 }
 
@@ -530,7 +553,7 @@ const stackValueLabels = {
         if (!style) return;
         const { x, y } = barSegmentCenter(el);
         ctx.font = style.font;
-        drawOutlinedText(ctx, String(v), x, y, style.lineWidth);
+        drawStackLabelText(ctx, String(v), x, y, style.lineWidth);
       });
     });
   },
