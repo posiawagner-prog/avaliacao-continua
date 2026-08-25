@@ -473,7 +473,8 @@ const stackValueLabels = {
         const v = Number(ds.data[i]) || 0;
         if (v <= 0 || totals[i] <= 0) return;
         if (v / totals[i] < 0.08) return;
-        const { x, y } = el.tooltipPosition();
+        const x = (el.base + el.x) / 2;
+        const y = el.y;
         ctx.font = "600 10px DM Sans, system-ui, sans-serif";
         drawOutlinedText(ctx, String(v), x, y, 2.5);
       });
