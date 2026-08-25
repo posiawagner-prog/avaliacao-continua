@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>6º ano · Avaliação Continua de Aprendizagem</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles.css?v=2" />
+  <script>
+    window.__ANO_PAGINA__ = "6";
+    (function () {
+      var theme = localStorage.getItem("aca-theme-all");
+      document.documentElement.setAttribute("data-theme", theme === "light" ? "light" : "dark");
+    })();
+  </script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="logo" href="../" title="Voltar ao início">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M8 7h8M8 11h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </a>
+    <nav>
+      <button class="nav-btn active" data-view="dashboard" title="Visão geral">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="nav-btn" data-view="table" title="Lista de turmas">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </nav>
+    <button class="nav-btn" id="btnResetAll" title="Limpar filtros">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </aside>
+
+  <div class="app">
+    <header class="topbar">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <input id="searchInput" type="search" placeholder="Buscar escola, turma ou disciplina..." autocomplete="off" />
+      </label>
+      <div class="topbar-date" id="todayLabel"></div>
+      <div class="topbar-actions">
+        <button type="button" class="theme-switch" id="btnTheme" role="switch" aria-checked="false" aria-label="Ativar modo claro" title="Modo escuro">
+          <span class="theme-switch-track"><span class="theme-switch-knob"></span></span>
+        </button>
+        <button class="icon-btn" title="Atualizado a partir das planilhas">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.2.63.82 1.05 1.51 1.05H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="1.6"/></svg>
+        </button>
+        <div class="avatar" title="Wagner">W</div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-greet">
+          <div class="brand-block">
+            <img class="brand-logo" src="../assets/logo-prefeitura.png" alt="Prefeitura de São José da Tapera" />
+            <p class="hero-hello">Olá, Wagner!</p>
+          </div>
+          <div class="hero-title-block">
+            <h2 class="hero-title">
+              <span>Avaliação Continua de Aprendizagem</span>
+              <span>CICLO I E CICLO II</span>
+              <span>6º ano</span>
+            </h2>
+            <p>Clique nos gráficos para filtrar o painel.</p>
+            <nav class="year-nav" aria-label="Anos escolares">
+              <a href="../6o-ano/" data-ano="6">6º ano</a>
+              <a href="../7o-ano/" data-ano="7">7º ano</a>
+              <a href="../8o-ano/" data-ano="8">8º ano</a>
+              <a href="../9o-ano/" data-ano="9">9º ano</a>
+            </nav>
+          </div>
+          <img class="brand-logo" src="../assets/logo-semed.png" alt="SEMED - Secretaria Municipal de Educação" />
+        </div>
+        <div class="filters">
+          <label class="select"><span>Ano</span>
+            <select id="filterAno">
+              <option value="">Todos os anos</option>
+              <option value="6">6º ano</option>
+              <option value="7">7º ano</option>
+              <option value="8">8º ano</option>
+              <option value="9">9º ano</option>
+            </select>
+          </label>
+          <label class="select"><span>Disciplina</span>
+            <select id="filterDisciplina">
+              <option value="">Todas</option>
+              <option value="lp">Língua Portuguesa</option>
+              <option value="mat">Matemática</option>
+            </select>
+          </label>
+          <label class="select"><span>Escola</span><select id="filterEscola"></select></label>
+          <label class="select"><span>Turma</span><select id="filterTurma"></select></label>
+          <label class="select"><span>Período</span>
+            <select id="filterPeriodo">
+              <option value="entrada">Ciclo I - Entrada</option>
+              <option value="percurso" selected>Ciclo II - Percurso</option>
+              <option value="comparativo">Comparativo</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <div class="chips" id="chips" hidden></div>
+
+      <section id="viewDashboard">
+        <div class="layout">
+          <div class="col-left">
+            <div class="stats-col" id="kpiLeft"></div>
+            <div class="stats-col" id="kpiRight"></div>
+          </div>
+          <article class="card chart-card">
+            <div class="card-head"><div><h2>Ciclo I × Ciclo II</h2><p>Clique em uma barra para filtrar o nível</p></div></div>
+            <div class="chart-wrap tall"><canvas id="chartComparativo"></canvas></div>
+          </article>
+        </div>
+
+        <div class="layout-bottom">
+          <article class="card chart-card">
+            <div class="card-head"><div><h2 id="chartDonutTitle">Distribuição por nível</h2><p id="chartDonutSub">Clique em um segmento para filtrar</p></div></div>
+            <div class="donut-layout">
+              <div class="chart-wrap donut"><canvas id="chartDonut"></canvas></div>
+              <ul class="legend" id="donutLegend"></ul>
+            </div>
+          </article>
+          <article class="card chart-card">
+            <div class="card-head"><div><h2 id="chartEscolasTitle">Composição por escola</h2><p id="chartEscolasSub">Clique em uma barra para filtrar escola e nível</p></div></div>
+            <div class="chart-wrap escolas" id="chartEscolasWrap"><canvas id="chartEscolas"></canvas></div>
+          </article>
+        </div>
+
+        <div class="layout-bottom single" style="margin-top:16px">
+          <article class="card chart-card full">
+            <div class="card-head"><div><h2>Desempenho por habilidade</h2><p>Média percentual de acerto nas habilidades da avaliação</p></div></div>
+            <div class="chart-wrap tall"><canvas id="chartHabilidades"></canvas></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="viewTable" hidden>
+        <div class="status-row" id="statusRow"></div>
+        <article class="card table-card">
+          <div class="table-toolbar">
+            <div><strong id="tableCount">0 turmas</strong><span class="muted"> · 6º ano</span></div>
+            <div class="table-actions"><button class="btn" id="btnExport">Exportar CSV</button></div>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th data-sort="ano">Ano</th>
+                  <th data-sort="disciplina">Disciplina</th>
+                  <th data-sort="escola">Escola</th>
+                  <th data-sort="turma">Turma</th>
+                  <th class="num" data-sort="alunos">Previstos</th>
+                  <th class="num" data-sort="avaliados">Avaliados</th>
+                  <th class="num" data-sort="participacao">Part. %</th>
+                  <th class="num" data-sort="acertoTotal">Acerto %</th>
+                  <th class="num" data-sort="defasagem">Defasagem</th>
+                  <th class="num" data-sort="intermediario">Intermed.</th>
+                  <th class="num" data-sort="adequado">Adequado</th>
+                  <th class="num" data-sort="predominante">Perfil</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <span id="pageInfo">1 de 1</span>
+            <button class="icon-btn" id="pagePrev" aria-label="Página anterior">&lt;</button>
+            <button class="icon-btn" id="pageNext" aria-label="Próxima página">&gt;</button>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script src="../vendor/chart.umd.min.js"></script>
+  <script src="../dados.js?v=2"></script>
+  <script src="../app.js?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+﻿_serve*
+_public.url
+_serve.jobid
+*.err
+*.ready
+*.csv
+dados-gerados.json
+.DS_Store
+Thumbs.db
