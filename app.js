@@ -488,6 +488,8 @@ function barSegmentCenter(el) {
 
 function drawStackLabelText(ctx, text, x, y) {
   ctx.save();
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
   ctx.fillStyle = "#000000";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -509,16 +511,16 @@ function fitStackLabelFont(ctx, text, segmentWidth, barHeight) {
     ? Math.min(maxH * 0.78, segmentWidth * 0.42, 9)
     : Math.min(10, maxH * 0.72);
   fontSize = Math.max(minSize, fontSize);
-  ctx.font = `600 ${fontSize}px DM Sans, system-ui, sans-serif`;
+  ctx.font = `700 ${fontSize}px DM Sans, system-ui, sans-serif`;
 
   while (fontSize > minSize && ctx.measureText(label).width > maxW) {
     fontSize -= 0.25;
-    ctx.font = `600 ${fontSize}px DM Sans, system-ui, sans-serif`;
+    ctx.font = `700 ${fontSize}px DM Sans, system-ui, sans-serif`;
   }
 
   if (ctx.measureText(label).width > maxW) {
     fontSize = minSize;
-    ctx.font = `600 ${fontSize}px DM Sans, system-ui, sans-serif`;
+    ctx.font = `700 ${fontSize}px DM Sans, system-ui, sans-serif`;
   }
 
   return {
