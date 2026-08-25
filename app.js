@@ -486,14 +486,11 @@ function barSegmentCenter(el) {
   return { x: (Math.min(x, base) + Math.max(x, base)) / 2, y };
 }
 
-function drawStackLabelText(ctx, text, x, y, lineWidth = 0.8) {
+function drawStackLabelText(ctx, text, x, y) {
   ctx.save();
-  ctx.lineWidth = lineWidth;
-  ctx.strokeStyle = currentTheme() === "light" ? "rgba(255,255,255,.75)" : "rgba(0,0,0,.35)";
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = "#000000";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.strokeText(text, x, y);
   ctx.fillText(text, x, y);
   ctx.restore();
 }
@@ -553,7 +550,7 @@ const stackValueLabels = {
         if (!style) return;
         const { x, y } = barSegmentCenter(el);
         ctx.font = style.font;
-        drawStackLabelText(ctx, String(v), x, y, style.lineWidth);
+        drawStackLabelText(ctx, String(v), x, y);
       });
     });
   },
