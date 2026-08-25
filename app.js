@@ -425,10 +425,10 @@ function chartDefaults() {
   return { muted, text };
 }
 
-function drawOutlinedText(ctx, text, x, y, lineWidth = 3) {
+function drawOutlinedText(ctx, text, x, y, lineWidth = 1.25) {
   ctx.save();
   ctx.lineWidth = lineWidth;
-  ctx.strokeStyle = currentTheme() === "light" ? "rgba(255,255,255,.9)" : "rgba(0,0,0,.55)";
+  ctx.strokeStyle = currentTheme() === "light" ? "rgba(255,255,255,.75)" : "rgba(0,0,0,.4)";
   ctx.fillStyle = chartTextColor();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -485,7 +485,7 @@ const stackValueLabels = {
         if (segmentWidth < 22) return;
         const { x, y } = barSegmentCenter(el);
         ctx.font = "600 10px DM Sans, system-ui, sans-serif";
-        drawOutlinedText(ctx, String(v), x, y, 2.5);
+        drawOutlinedText(ctx, String(v), x, y, 1.1);
       });
     });
   },
