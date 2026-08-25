@@ -229,6 +229,23 @@ function escolasUnicas() {
   ].sort((a, b) => a.localeCompare(b, "pt-BR"));
 }
 
+function turmaLetraValida(turma) {
+  const t = String(turma || "").trim();
+  if (!t) return false;
+  if (/\d\s*º?\s*ANO/i.test(t)) return false;
+  return /^[A-Z]$/i.test(t) || /^ÚNICA$/i.test(t);
+}
+
+function ordenarTurmas(a, b) {
+  const rank = (t) => {
+    const u = String(t).toUpperCase();
+    if (u === "ÚNICA") return 100;
+    if (/^[A-Z]$/.test(u)) return u.charCodeAt(0);
+    return 50;
+  };
+  return rank(a) - rank(b) || String(a).localeCompare(String(b), "pt-BR");
+}
+
 function turmasDaEscola(escola) {
   return [
     ...new Set(
@@ -236,10 +253,10 @@ function turmasDaEscola(escola) {
         if (state.ano && String(r.ano) !== String(state.ano)) return false;
         if (state.disciplina && r.disciplina !== state.disciplina) return false;
         if (escola && r.escola !== escola) return false;
-        return true;
+        return turmaLetraValida(r.turma);
       }).map((r) => r.turma)
     ),
-  ].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  ].sort(ordenarTurmas);
 }
 
 function fillSelects() {
