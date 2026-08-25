@@ -225,24 +225,26 @@ html[data-theme="light"] .theme-switch-knob {
 
 .hero {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 16px;
   margin-bottom: 16px;
 }
 
 .hero-greet {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  column-gap: 16px;
+  column-gap: 20px;
+  width: 100%;
   min-width: 0;
-  flex: 1;
 }
 
 .hero-title-block {
   text-align: center;
   min-width: 0;
+  justify-self: center;
+  width: 100%;
 }
 
 .hero-greet > .brand-logo:last-of-type {
@@ -252,6 +254,7 @@ html[data-theme="light"] .theme-switch-knob {
 .brand-logo {
   height: 52px;
   width: auto;
+  max-width: 140px;
   object-fit: contain;
   flex: 0 0 auto;
 }
@@ -278,17 +281,18 @@ html[data-theme="light"] .theme-switch-knob {
   flex-direction: column;
   align-items: center;
   color: var(--text);
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   margin: 0 0 4px;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
 .hero-title span {
   display: block;
   text-align: center;
+  white-space: nowrap;
 }
 .hero p:not(.hero-hello) { color: var(--text); margin-top: 6px; font-size: 14px; }
 
@@ -651,12 +655,25 @@ tbody tr.clickable { cursor: pointer; }
 @media (max-width: 760px) {
   .sidebar { display: none; }
   .app { padding: 14px; }
-  .hero { flex-direction: column; align-items: flex-start; }
-  .hero-greet { grid-template-columns: 1fr; justify-items: center; row-gap: 8px; }
-  .hero-title { font-size: 16px; letter-spacing: 0.03em; }
-  .hero-greet > .brand-logo:last-of-type { justify-self: center; }
-  .brand-logo { height: 44px; }
+  .hero-greet {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: 10px;
+  }
+  .hero-title { font-size: 13px; letter-spacing: 0.02em; }
+  .hero-title span { white-space: normal; }
+  .brand-logo { height: 40px; max-width: 96px; }
   .col-left { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .hero-greet {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    row-gap: 10px;
+  }
+  .hero-greet > .brand-logo:last-of-type { justify-self: center; }
+  .hero-title { font-size: 15px; }
+  .hero-title span { white-space: nowrap; }
 }
 
 /* --- Avaliação Continua extras --- */
