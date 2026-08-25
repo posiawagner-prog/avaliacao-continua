@@ -294,13 +294,19 @@ html[data-theme="light"] .theme-switch-knob {
 
 .year-nav {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
   gap: 8px;
   margin-top: 12px;
 }
 .year-nav a {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  white-space: nowrap;
   padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid var(--border);
@@ -319,9 +325,10 @@ html[data-theme="light"] .theme-switch-knob {
   border-color: var(--text);
 }
 .year-nav a.active {
-  color: #0c0c0d;
+  color: #0c0c0d !important;
   background: var(--green);
   border-color: transparent;
+  -webkit-text-fill-color: #0c0c0d;
 }
 
 .filters { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -661,9 +668,10 @@ tbody tr.clickable { cursor: pointer; }
 @media (max-width: 640px) {
   .filters { grid-template-columns: 1fr; }
 }
-.year-nav a.active {
-  border-color: var(--green);
-  color: var(--green);
+@media (max-width: 480px) {
+  .year-nav {
+    flex-wrap: wrap;
+  }
 }
 .kpi.active {
   outline: 1px solid var(--green);
@@ -693,3 +701,13 @@ tbody tr.clickable { cursor: pointer; }
 .hero-title span:first-child { font-size: 0.92em; }
 
 .filters .select { min-width: 0; flex: unset; width: 100%; }
+
+/* Ano ativo: texto escuro em primeiro plano sobre o fundo verde */
+.year-nav a.active,
+.year-nav a.active:visited,
+.year-nav a.active:hover {
+  color: #0c0c0d !important;
+  -webkit-text-fill-color: #0c0c0d;
+  background: var(--green);
+  border-color: transparent;
+}
