@@ -329,10 +329,11 @@ html[data-theme="light"] .theme-switch-knob {
   border-color: var(--text);
 }
 .year-nav a.active {
-  color: #0c0c0d !important;
-  background: var(--green);
-  border-color: transparent;
-  -webkit-text-fill-color: #0c0c0d;
+  color: #000 !important;
+  background: #00e676 !important;
+  border-color: transparent !important;
+  -webkit-text-fill-color: #000 !important;
+  font-weight: 700;
 }
 
 .filters { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -719,12 +720,14 @@ tbody tr.clickable { cursor: pointer; }
 
 .filters .select { min-width: 0; flex: unset; width: 100%; }
 
-/* Ano ativo: texto escuro em primeiro plano sobre o fundo verde */
+/* Ano ativo: texto preto legível sobre o fundo verde */
 .year-nav a.active,
+.year-nav a.active:link,
 .year-nav a.active:visited,
-.year-nav a.active:hover {
-  color: #0c0c0d !important;
-  -webkit-text-fill-color: #0c0c0d;
-  background: var(--green);
-  border-color: transparent;
+.year-nav a.active:hover,
+.year-nav a.active:focus {
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important;
+  background: #00e676 !important;
+  border-color: transparent !important;
 }

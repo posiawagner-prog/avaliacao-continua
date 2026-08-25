@@ -256,8 +256,13 @@ function yearPageUrl(ano) {
 function applyPageYearUI() {
   document.querySelectorAll(".year-nav a").forEach((a) => {
     const ano = a.dataset.ano;
+    if (!ano) return;
+    const isActive = String(state.ano) === String(ano);
     a.href = yearPageUrl(ano);
-    a.classList.toggle("active", String(state.ano) === String(ano));
+    a.textContent = `${ano}º ano`;
+    a.classList.toggle("active", isActive);
+    if (isActive) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
   });
 }
 
