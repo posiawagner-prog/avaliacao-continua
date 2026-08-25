@@ -486,6 +486,27 @@ function barSegmentCenter(el) {
   return { x: (Math.min(x, base) + Math.max(x, base)) / 2, y };
 }
 
+function fitStackLabelFont(ctx, text, segmentWidth, barHeight) {
+  const label = String(text);
+  const maxW = Math.max(segmentWidth - 6, 0);
+  const maxH = Math.max((barHeight || 18) - 4, 0);
+  if (maxW < 5 || maxH < 5) return null;
+
+  let fontSize = Math.min(10, maxH * 0.72);
+  ctx.font = `600 ${fontSize}px DM Sans, system-ui, sans-serif`;
+  while (fontSize > 6 && ctx.measureText(label).width > maxW) {
+    fontSize -= 0.5;
+    ctx.font = `600 ${fontSize}px DM Sans, system-ui, sans-serif`;
+  }
+
+  if (ctx.measureText(label).width > maxW && maxW < 8) return null;
+
+  return {
+    font: ctx.font,
+    lineWidth: Math.max(0.55, fontSize * 0.12),
+  };
+}
+
 const stackValueLabels = {
   id: "stackValueLabels",
   afterDatasetsDraw(chart) {
@@ -503,12 +524,13 @@ const stackValueLabels = {
       meta.data.forEach((el, i) => {
         const v = Number(ds.data[i]) || 0;
         if (v <= 0 || totals[i] <= 0) return;
-        const { x: px, base } = el.getProps(["x", "base"], true);
+        const { x: px, base, height } = el.getProps(["x", "base", "height"], true);
         const segmentWidth = Math.abs(px - base);
-        if (segmentWidth < 22) return;
+        const style = fitStackLabelFont(ctx, v, segmentWidth, height);
+        if (!style) return;
         const { x, y } = barSegmentCenter(el);
-        ctx.font = "600 10px DM Sans, system-ui, sans-serif";
-        drawOutlinedText(ctx, String(v), x, y, 1.1);
+        ctx.font = style.font;
+        drawOutlinedText(ctx, String(v), x, y, style.lineWidth);
       });
     });
   },
