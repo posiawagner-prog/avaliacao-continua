@@ -1133,6 +1133,8 @@ function waitFrames(n = 2) {
 
 async function exportPdf(rows) {
   const sorted = sortedRows(rows);
+  const prevPeriodo = state.periodo;
+  state.periodo = "comparativo";
   const resumo = resumoAgg(sorted);
   const filtros = filtrosAtivosLabels();
   const geradoEm = new Intl.DateTimeFormat("pt-BR", {
@@ -1157,6 +1159,7 @@ async function exportPdf(rows) {
   const imgHabilidades = captureChartImage("chartHabilidades");
 
   restoreChartDpr();
+  state.periodo = prevPeriodo;
   applyTheme(prevTheme);
   setView(prevView);
   if (dash && wasHidden && prevView !== "dashboard") dash.hidden = true;
@@ -1197,7 +1200,13 @@ async function exportPdf(rows) {
     .sub { color: #555; margin: 0 0 10px; font-size: 11px; }
     .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-bottom: 12px; }
     .meta span { background: #f2f3f7; border-radius: 6px; padding: 4px 8px; font-size: 11px; }
+    .page-1 { page-break-after: always; page-break-inside: avoid; }
+    .page-1-head { margin-bottom: 8px; }
+    .page-1-head h1 { font-size: 16px; margin-bottom: 2px; }
+    .page-1-head .sub { margin-bottom: 4px; font-size: 10px; }
+    .page-1-head .meta { margin-bottom: 8px; }
     .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+    .kpis.page-1-kpis { margin-bottom: 10px; }
     .kpi { border: 1px solid #d8dbe3; border-radius: 8px; padding: 8px 10px; }
     .kpi strong { display: block; font-size: 16px; margin-top: 2px; }
     .kpi span { color: #666; font-size: 10px; text-transform: uppercase; letter-spacing: .03em; }
@@ -1205,6 +1214,10 @@ async function exportPdf(rows) {
     .kpi .int { color: #ef6c00; }
     .kpi .ade { color: #2e7d32; }
     .charts-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 12px; margin-bottom: 12px; page-break-inside: avoid; }
+    .page-1 .charts-grid { margin-bottom: 0; flex: 1; min-height: 0; }
+    .page-1 .chart-block { display: flex; flex-direction: column; min-height: 0; }
+    .page-1 .chart-block h2 { flex-shrink: 0; }
+    .page-1 .chart-block img { flex: 1; max-height: 280px; object-fit: contain; }
     .charts-row { display: grid; grid-template-columns: 1fr 1.2fr; gap: 12px; margin-bottom: 12px; page-break-inside: avoid; }
     .chart-block { border: 1px solid #d8dbe3; border-radius: 10px; padding: 10px; background: #fff; page-break-inside: avoid; }
     .chart-block.wide { grid-column: 1 / -1; margin-bottom: 12px; page-break-inside: avoid; }
@@ -1228,6 +1241,7 @@ async function exportPdf(rows) {
       .no-print { display: none !important; }
       body { padding: 0; font-size: 11px; }
       .chart-block img { max-height: none; width: 100%; }
+      .page-1 .chart-block img { max-height: 280px; }
     }
   </style>
 </head>
@@ -1237,23 +1251,29 @@ async function exportPdf(rows) {
       Imprimir / Salvar PDF
     </button>
   </div>
-  <h1>Avaliação Continua de Aprendizagem — CICLO I E CICLO II</h1>
-  <p class="sub">Secretaria Municipal de Educação - SEMED · São José da Tapera - AL</p>
-  <p class="sub">Relatório gerado em ${geradoEm}</p>
-  <div class="meta">${filtros.map((f) => `<span>${f}</span>`).join("")}</div>
+  <section class="page-1">
+    <div class="page-1-head">
+      <h1>Avaliação Continua de Aprendizagem — CICLO I E CICLO II</h1>
+      <p class="sub">Secretaria Municipal de Educação - SEMED · São José da Tapera - AL</p>
+      <p class="sub">Relatório gerado em ${geradoEm}</p>
+      <div class="meta">${filtros.map((f) => `<span>${f}</span>`).join("")}</div>
+    </div>
+    <div class="kpis page-1-kpis">
+      <div class="kpi"><span>Acerto total</span><strong>${fmtPct(resumo.acerto)}</strong></div>
+      <div class="kpi"><span>Defasagem</span><strong class="def">${fmt(resumo.defasagem)}</strong></div>
+      <div class="kpi"><span>Intermediário</span><strong class="int">${fmt(resumo.intermediario)}</strong></div>
+      <div class="kpi"><span>Adequado</span><strong class="ade">${fmt(resumo.adequado)}</strong></div>
+    </div>
+    <div class="charts-grid">
+      ${chartBlock("Ciclo I × Ciclo II", imgComparativo)}
+      ${chartBlock("Distribuição por nível", imgDonut)}
+    </div>
+  </section>
   <div class="kpis">
     <div class="kpi"><span>Turmas</span><strong>${fmt(resumo.turmas)}</strong></div>
     <div class="kpi"><span>Previstos</span><strong>${fmt(resumo.previstos)}</strong></div>
     <div class="kpi"><span>Avaliados</span><strong>${fmt(resumo.avaliados)}</strong></div>
     <div class="kpi"><span>Participação</span><strong>${fmtPct(resumo.participacao)}</strong></div>
-    <div class="kpi"><span>Acerto total</span><strong>${fmtPct(resumo.acerto)}</strong></div>
-    <div class="kpi"><span>Defasagem</span><strong class="def">${fmt(resumo.defasagem)}</strong></div>
-    <div class="kpi"><span>Intermediário</span><strong class="int">${fmt(resumo.intermediario)}</strong></div>
-    <div class="kpi"><span>Adequado</span><strong class="ade">${fmt(resumo.adequado)}</strong></div>
-  </div>
-  <div class="charts-grid">
-    ${chartBlock("Ciclo I × Ciclo II", imgComparativo)}
-    ${chartBlock("Distribuição por nível", imgDonut)}
   </div>
   ${chartBlock("Composição por escola", imgEscolas, true)}
   ${chartBlock("Desempenho por habilidade", imgHabilidades, true)}
