@@ -1028,7 +1028,46 @@ function resumoAgg(rows) {
   };
 }
 
-function exportPdf(rows) {
+function captureChartImage(id) {
+  const canvas = document.getElementById(id);
+  if (!canvas || !canvas.width || !canvas.height) return "";
+  try {
+    const out = document.createElement("canvas");
+    out.width = canvas.width;
+    out.height = canvas.height;
+    const ctx = out.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, out.width, out.height);
+    ctx.drawImage(canvas, 0, 0);
+    return out.toDataURL("image/png");
+  } catch (e) {
+    console.error("captureChartImage", id, e);
+    return "";
+  }
+}
+
+function chartBlock(title, src, wide = false) {
+  if (!src) return "";
+  return `<section class="chart-block${wide ? " wide" : ""}">
+    <h2>${title}</h2>
+    <img src="${src}" alt="${title}" />
+  </section>`;
+}
+
+function waitFrames(n = 2) {
+  return new Promise((resolve) => {
+    const step = () => {
+      if (n <= 0) resolve();
+      else {
+        n -= 1;
+        requestAnimationFrame(step);
+      }
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+async function exportPdf(rows) {
   const sorted = sortedRows(rows);
   const resumo = resumoAgg(sorted);
   const filtros = filtrosAtivosLabels();
@@ -1036,6 +1075,29 @@ function exportPdf(rows) {
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date());
+
+  const prevTheme = currentTheme();
+  const prevView = state.view;
+  const dash = document.getElementById("viewDashboard");
+  const wasHidden = dash?.hidden;
+
+  // Tema claro + dashboard visível para capturar gráficos legíveis na impressão
+  applyTheme("light");
+  setView("dashboard");
+  if (dash) dash.hidden = false;
+  render();
+  await waitFrames(3);
+  await new Promise((r) => setTimeout(r, 120));
+
+  const imgComparativo = captureChartImage("chartComparativo");
+  const imgDonut = captureChartImage("chartDonut");
+  const imgEscolas = captureChartImage("chartEscolas");
+  const imgHabilidades = captureChartImage("chartHabilidades");
+
+  applyTheme(prevTheme);
+  setView(prevView);
+  if (dash && wasHidden && prevView !== "dashboard") dash.hidden = true;
+  render();
 
   const tableRows = sorted
     .map((row) => {
@@ -1064,18 +1126,27 @@ function exportPdf(rows) {
   <meta charset="UTF-8" />
   <title>Avaliação Continua · Relatório</title>
   <style>
-    @page { size: A4 landscape; margin: 12mm; }
+    @page { size: A4 landscape; margin: 10mm; }
     * { box-sizing: border-box; }
-    body { font-family: "Segoe UI", Arial, sans-serif; color: #141418; margin: 0; padding: 0; font-size: 11px; }
+    body { font-family: "Segoe UI", Arial, sans-serif; color: #141418; margin: 0; padding: 8px; font-size: 11px; }
     h1 { font-size: 16px; margin: 0 0 4px; }
-    h2 { font-size: 13px; margin: 16px 0 8px; }
-    .sub { color: #555; margin: 0 0 12px; }
-    .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 12px; }
+    h2 { font-size: 12px; margin: 0 0 8px; }
+    .sub { color: #555; margin: 0 0 10px; }
+    .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-bottom: 12px; }
     .meta span { background: #f2f3f7; border-radius: 6px; padding: 4px 8px; }
-    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
     .kpi { border: 1px solid #d8dbe3; border-radius: 8px; padding: 8px 10px; }
     .kpi strong { display: block; font-size: 15px; margin-top: 2px; }
     .kpi span { color: #666; font-size: 10px; text-transform: uppercase; letter-spacing: .03em; }
+    .kpi .def { color: #c62828; }
+    .kpi .int { color: #ef6c00; }
+    .kpi .ade { color: #2e7d32; }
+    .charts-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 12px; margin-bottom: 12px; page-break-inside: avoid; }
+    .charts-row { display: grid; grid-template-columns: 1fr 1.2fr; gap: 12px; margin-bottom: 12px; page-break-inside: avoid; }
+    .chart-block { border: 1px solid #d8dbe3; border-radius: 10px; padding: 10px; background: #fff; }
+    .chart-block.wide { grid-column: 1 / -1; margin-bottom: 12px; page-break-inside: avoid; }
+    .chart-block img { display: block; width: 100%; height: auto; max-height: 280px; object-fit: contain; }
+    .chart-block.wide img { max-height: 320px; }
     table { width: 100%; border-collapse: collapse; }
     th, td { border: 1px solid #cfd3dc; padding: 5px 6px; text-align: left; vertical-align: top; }
     th { background: #eef0f5; font-size: 10px; }
@@ -1083,10 +1154,13 @@ function exportPdf(rows) {
     td.def { color: #c62828; font-weight: 600; }
     td.int { color: #ef6c00; font-weight: 600; }
     td.ade { color: #2e7d32; font-weight: 600; }
+    .section-title { font-size: 13px; margin: 16px 0 8px; page-break-after: avoid; }
     .foot { margin-top: 12px; color: #666; font-size: 10px; }
     @media print {
       .no-print { display: none !important; }
-      a { color: inherit; text-decoration: none; }
+      body { padding: 0; }
+      .chart-block img { max-height: 240px; }
+      .chart-block.wide img { max-height: 260px; }
     }
   </style>
 </head>
@@ -1105,11 +1179,17 @@ function exportPdf(rows) {
     <div class="kpi"><span>Avaliados</span><strong>${fmt(resumo.avaliados)}</strong></div>
     <div class="kpi"><span>Participação</span><strong>${fmtPct(resumo.participacao)}</strong></div>
     <div class="kpi"><span>Acerto total</span><strong>${fmtPct(resumo.acerto)}</strong></div>
-    <div class="kpi"><span>Defasagem</span><strong>${fmt(resumo.defasagem)}</strong></div>
-    <div class="kpi"><span>Intermediário</span><strong>${fmt(resumo.intermediario)}</strong></div>
-    <div class="kpi"><span>Adequado</span><strong>${fmt(resumo.adequado)}</strong></div>
+    <div class="kpi"><span>Defasagem</span><strong class="def">${fmt(resumo.defasagem)}</strong></div>
+    <div class="kpi"><span>Intermediário</span><strong class="int">${fmt(resumo.intermediario)}</strong></div>
+    <div class="kpi"><span>Adequado</span><strong class="ade">${fmt(resumo.adequado)}</strong></div>
   </div>
-  <h2>Turmas filtradas (${fmt(sorted.length)})</h2>
+  <div class="charts-grid">
+    ${chartBlock("Ciclo I × Ciclo II", imgComparativo)}
+    ${chartBlock("Distribuição por nível", imgDonut)}
+  </div>
+  ${chartBlock("Composição por escola", imgEscolas, true)}
+  ${chartBlock("Desempenho por habilidade", imgHabilidades, true)}
+  <h2 class="section-title">Turmas filtradas (${fmt(sorted.length)})</h2>
   <table>
     <thead>
       <tr>
@@ -1134,7 +1214,7 @@ function exportPdf(rows) {
   <p class="foot">Fonte: painel Avaliação Continua de Aprendizagem. Use “Salvar como PDF” na impressão do navegador.</p>
   <script>
     window.addEventListener("load", function () {
-      setTimeout(function () { window.focus(); window.print(); }, 250);
+      setTimeout(function () { window.focus(); window.print(); }, 350);
     });
   </script>
 </body>
