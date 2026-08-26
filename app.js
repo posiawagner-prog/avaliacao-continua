@@ -36,7 +36,8 @@ const state = {
 const charts = {};
 const PAGE_SIZE = 10;
 const THEME_KEY = "aca-theme-all";
-const PDF_EXPORT_DPR = 4;
+const PDF_EXPORT_DPR = 6;
+let pdfChartExport = false;
 
 function emptyAgg() {
   return {
@@ -463,25 +464,61 @@ function chartTextColor() {
   return currentTheme() === "light" ? cssVar("--text") || "#141418" : "#ffffff";
 }
 
+function chartInkColor() {
+  return pdfChartExport ? "#000000" : chartTextColor();
+}
+
+function chartLabelFont(size = 11, weight = 600) {
+  const scaled = pdfChartExport ? Math.round(size * 1.25) : size;
+  const w = pdfChartExport ? 700 : weight;
+  return `${w} ${scaled}px DM Sans, system-ui, sans-serif`;
+}
+
+function chartTickStyle(size = 12) {
+  return {
+    color: chartInkColor(),
+    font: {
+      size: pdfChartExport ? size + 2 : size,
+      weight: pdfChartExport ? "700" : "500",
+    },
+  };
+}
+
+function chartLegendStyle(size = 11) {
+  return {
+    color: chartInkColor(),
+    font: {
+      size: pdfChartExport ? size + 2 : size,
+      weight: pdfChartExport ? "700" : "500",
+    },
+  };
+}
+
 function chartDefaults() {
   if (typeof Chart === "undefined") return { muted: "#9a9aa3", text: "#ffffff" };
-  const muted = cssVar("--muted") || "#9a9aa3";
-  const text = chartTextColor();
+  const muted = pdfChartExport ? "#000000" : cssVar("--muted") || "#9a9aa3";
+  const text = chartInkColor();
   Chart.defaults.color = text;
   Chart.defaults.borderColor = "transparent";
   Chart.defaults.font.family = "'DM Sans', system-ui, sans-serif";
+  Chart.defaults.font.weight = pdfChartExport ? "700" : "500";
+  Chart.defaults.font.size = pdfChartExport ? 13 : 12;
   return { muted, text };
 }
 
-function drawOutlinedText(ctx, text, x, y, lineWidth = 1.25) {
+function drawChartLabel(ctx, text, x, y) {
   ctx.save();
-  ctx.lineWidth = lineWidth;
-  ctx.strokeStyle = currentTheme() === "light" ? "rgba(255,255,255,.75)" : "rgba(0,0,0,.4)";
-  ctx.fillStyle = chartTextColor();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.strokeText(text, x, y);
-  ctx.fillText(text, x, y);
+  ctx.fillStyle = chartInkColor();
+  if (pdfChartExport) {
+    ctx.fillText(text, x, y);
+  } else {
+    ctx.lineWidth = 1.25;
+    ctx.strokeStyle = currentTheme() === "light" ? "rgba(255,255,255,.75)" : "rgba(0,0,0,.4)";
+    ctx.strokeText(text, x, y);
+    ctx.fillText(text, x, y);
+  }
   ctx.restore();
 }
 
@@ -496,8 +533,8 @@ const barValueLabels = {
         const v = ds.data[i];
         if (v == null || v === 0) return;
         const { x, y } = el.tooltipPosition();
-        ctx.font = "600 11px DM Sans, system-ui, sans-serif";
-        drawOutlinedText(ctx, String(v), x, y - 10);
+        ctx.font = chartLabelFont(11);
+        drawChartLabel(ctx, String(v), x, y - 10);
       });
     });
   },
@@ -530,11 +567,11 @@ function fitStackLabelFont(ctx, text, segmentWidth, barHeight) {
   const pad = narrow ? 2 : 4;
   const maxW = Math.max(segmentWidth - pad, 2);
   const maxH = Math.max((barHeight || 18) - 2, 4);
-  const minSize = narrow ? 4.5 : 6;
+  const minSize = pdfChartExport ? (narrow ? 7 : 9) : narrow ? 4.5 : 6;
 
   let fontSize = narrow
-    ? Math.min(maxH * 0.78, segmentWidth * 0.42, 9)
-    : Math.min(10, maxH * 0.72);
+    ? Math.min(maxH * 0.78, segmentWidth * 0.42, pdfChartExport ? 12 : 9)
+    : Math.min(pdfChartExport ? 13 : 10, maxH * 0.72);
   fontSize = Math.max(minSize, fontSize);
   ctx.font = `700 ${fontSize}px DM Sans, system-ui, sans-serif`;
 
@@ -595,8 +632,8 @@ const donutValueLabels = {
       const p = (v / total) * 100;
       if (p < 6) return;
       const { x, y } = el.tooltipPosition();
-      ctx.font = "700 11px DM Sans, system-ui, sans-serif";
-      drawOutlinedText(ctx, `${p.toFixed(0)}%`, x, y);
+      ctx.font = chartLabelFont(11);
+      drawChartLabel(ctx, `${p.toFixed(0)}%`, x, y);
     });
   },
 };
@@ -712,15 +749,15 @@ function renderComparativo(rows) {
         legend: {
           position: "top",
           align: "end",
-          labels: { boxWidth: 12, usePointStyle: true, color: chartTextColor() },
+          labels: { boxWidth: 12, usePointStyle: true, ...chartLegendStyle() },
         },
       },
       scales: {
-        x: { grid: { display: false }, ticks: { color: chartTextColor() } },
+        x: { grid: { display: false }, ticks: chartTickStyle(12) },
         y: {
           beginAtZero: true,
           grid: { color: "rgba(128,128,128,.15)" },
-          ticks: { precision: 0, color: chartTextColor() },
+          ticks: { precision: 0, ...chartTickStyle(12) },
         },
       },
       onClick(_e, els) {
@@ -787,7 +824,7 @@ function renderEscolas(rows) {
         legend: {
           position: "top",
           align: "end",
-          labels: { boxWidth: 10, usePointStyle: true, color: chartTextColor() },
+          labels: { boxWidth: 10, usePointStyle: true, ...chartLegendStyle(10) },
         },
       },
       scales: {
@@ -795,9 +832,9 @@ function renderEscolas(rows) {
           stacked: true,
           beginAtZero: true,
           grid: { color: "rgba(128,128,128,.12)" },
-          ticks: { color: chartTextColor() },
+          ticks: chartTickStyle(11),
         },
-        y: { stacked: true, grid: { display: false }, ticks: { color: chartTextColor() } },
+        y: { stacked: true, grid: { display: false }, ticks: chartTickStyle(11) },
       },
       onClick(_e, els) {
         if (!els.length) return;
@@ -860,13 +897,13 @@ function renderHabilidades(rows) {
         },
       },
       scales: {
-        x: { grid: { display: false }, ticks: { color: chartTextColor() } },
+        x: { grid: { display: false }, ticks: chartTickStyle(11) },
         y: {
           beginAtZero: true,
           max: 100,
           grid: { color: "rgba(128,128,128,.15)" },
           ticks: {
-            color: chartTextColor(),
+            ...chartTickStyle(11),
             callback: (v) => `${v}%`,
           },
         },
@@ -1056,21 +1093,28 @@ function captureChartImage(id) {
 
 async function preparePdfChartCapture() {
   if (typeof Chart === "undefined") return () => {};
+  pdfChartExport = true;
+  document.body.classList.add("pdf-chart-capture");
   const prevDpr = Chart.defaults.devicePixelRatio;
   Chart.defaults.devicePixelRatio = PDF_EXPORT_DPR;
   render();
-  await waitFrames(4);
-  await new Promise((r) => setTimeout(r, 280));
+  Object.values(charts).forEach((chart) => chart?.update("none"));
+  await waitFrames(6);
+  await new Promise((r) => setTimeout(r, 450));
   return () => {
+    pdfChartExport = false;
+    document.body.classList.remove("pdf-chart-capture");
     Chart.defaults.devicePixelRatio = prevDpr;
   };
 }
 
 function chartBlock(title, image, wide = false) {
   if (!image?.src) return "";
+  const displayW = Math.round(image.width / PDF_EXPORT_DPR);
+  const displayH = Math.round(image.height / PDF_EXPORT_DPR);
   return `<section class="chart-block${wide ? " wide" : ""}">
     <h2>${title}</h2>
-    <img src="${image.src}" width="${image.width}" height="${image.height}" alt="${title}" />
+    <img src="${image.src}" width="${displayW}" height="${displayH}" alt="${title}" />
   </section>`;
 }
 
@@ -1147,9 +1191,9 @@ async function exportPdf(rows) {
   <style>
     @page { size: A4 landscape; margin: 8mm; }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    body { font-family: "Segoe UI", Arial, sans-serif; color: #141418; margin: 0; padding: 10px; font-size: 12px; }
-    h1 { font-size: 18px; margin: 0 0 4px; }
-    h2 { font-size: 13px; margin: 0 0 8px; }
+    body { font-family: "Segoe UI", Arial, sans-serif; color: #000000; margin: 0; padding: 10px; font-size: 12px; }
+    h1 { font-size: 18px; margin: 0 0 4px; color: #000000; font-weight: 700; }
+    h2 { font-size: 13px; margin: 0 0 8px; color: #000000; font-weight: 700; }
     .sub { color: #555; margin: 0 0 10px; font-size: 11px; }
     .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-bottom: 12px; }
     .meta span { background: #f2f3f7; border-radius: 6px; padding: 4px 8px; font-size: 11px; }
@@ -1172,7 +1216,7 @@ async function exportPdf(rows) {
       object-fit: contain;
     }
     table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #cfd3dc; padding: 6px 7px; text-align: left; vertical-align: top; }
+    th, td { border: 1px solid #cfd3dc; padding: 6px 7px; text-align: left; vertical-align: top; color: #000000; }
     th { background: #eef0f5; font-size: 11px; }
     td.num, th.num { text-align: center; white-space: nowrap; }
     td.def { color: #c62828; font-weight: 600; }

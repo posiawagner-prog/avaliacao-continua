@@ -515,6 +515,10 @@ html[data-theme="light"] .card-head p {
 .chart-wrap.donut { height: 340px; }
 .chart-wrap.escolas { height: 480px; }
 
+body.pdf-chart-capture .chart-wrap.tall { height: 540px; }
+body.pdf-chart-capture .chart-wrap.donut { height: 580px; }
+body.pdf-chart-capture .chart-wrap.escolas { height: 920px; }
+
 .layout-bottom {
   display: grid;
   grid-template-columns: 1fr 1.05fr;
