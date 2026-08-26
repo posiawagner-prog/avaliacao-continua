@@ -1171,7 +1171,8 @@ async function exportPdf(rows) {
     </button>
   </div>
   <h1>Avaliação Continua de Aprendizagem — CICLO I E CICLO II</h1>
-  <p class="sub">Prefeitura de São José da Tapera · SEMED · Relatório gerado em ${geradoEm}</p>
+  <p class="sub">Secretaria Municipal de Educação - SEMED · São José da Tapera - AL</p>
+  <p class="sub">Relatório gerado em ${geradoEm}</p>
   <div class="meta">${filtros.map((f) => `<span>${f}</span>`).join("")}</div>
   <div class="kpis">
     <div class="kpi"><span>Turmas</span><strong>${fmt(resumo.turmas)}</strong></div>
