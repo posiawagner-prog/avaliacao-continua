@@ -337,7 +337,7 @@ function renderChips() {
     return;
   }
 
-  const pdfBtn = `<button type="button" class="btn btn-pdf" id="btnExportPdfChips" title="Gerar PDF dos filtros e relatório completo por ano">Gerar PDF</button>`;
+  const pdfBtn = `<button type="button" class="btn btn-pdf" id="btnExportPdfChips" title="Gerar PDF dos dados filtrados">Gerar PDF</button>`;
   chips.hidden = false;
   chips.innerHTML =
     items
@@ -1067,15 +1067,65 @@ function waitFrames(n = 2) {
   });
 }
 
-function pdfGeradoEm() {
-  return new Intl.DateTimeFormat("pt-BR", {
+async function exportPdf(rows) {
+  const sorted = sortedRows(rows);
+  const resumo = resumoAgg(sorted);
+  const filtros = filtrosAtivosLabels();
+  const geradoEm = new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date());
-}
 
-function pdfBaseStyles(extra = "") {
-  return `
+  const prevTheme = currentTheme();
+  const prevView = state.view;
+  const dash = document.getElementById("viewDashboard");
+  const wasHidden = dash?.hidden;
+
+  // Tema claro + dashboard visível para capturar gráficos legíveis na impressão
+  applyTheme("light");
+  setView("dashboard");
+  if (dash) dash.hidden = false;
+  render();
+  await waitFrames(3);
+  await new Promise((r) => setTimeout(r, 120));
+
+  const imgComparativo = captureChartImage("chartComparativo");
+  const imgDonut = captureChartImage("chartDonut");
+  const imgEscolas = captureChartImage("chartEscolas");
+  const imgHabilidades = captureChartImage("chartHabilidades");
+
+  applyTheme(prevTheme);
+  setView(prevView);
+  if (dash && wasHidden && prevView !== "dashboard") dash.hidden = true;
+  render();
+
+  const tableRows = sorted
+    .map((row) => {
+      const b = blocoAtivo(row) || {};
+      const pred = predominante(b);
+      return `<tr>
+        <td>${anoLabel(row.ano)}</td>
+        <td>${discLabel(row.disciplina)}</td>
+        <td>${formatSchoolLabel(row.escola)}</td>
+        <td>${row.turma}</td>
+        <td class="num">${fmt(b.previstos || row.alunos || 0)}</td>
+        <td class="num">${fmt(b.avaliados || 0)}</td>
+        <td class="num">${fmtPct(b.participacao || 0)}</td>
+        <td class="num">${fmtPct(b.acertoTotal || 0)}</td>
+        <td class="num def">${fmt(b.defasagem || 0)}</td>
+        <td class="num int">${fmt(b.intermediario || 0)}</td>
+        <td class="num ade">${fmt(b.adequado || 0)}</td>
+        <td class="num">${pred ? pred.short : "—"}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Avaliação Continua · Relatório</title>
+  <style>
     @page { size: A4 landscape; margin: 10mm; }
     * { box-sizing: border-box; }
     body { font-family: "Segoe UI", Arial, sans-serif; color: #141418; margin: 0; padding: 8px; font-size: 11px; }
@@ -1105,24 +1155,26 @@ function pdfBaseStyles(extra = "") {
     td.int { color: #ef6c00; font-weight: 600; }
     td.ade { color: #2e7d32; font-weight: 600; }
     .section-title { font-size: 13px; margin: 16px 0 8px; page-break-after: avoid; }
-    .year-block { page-break-before: always; margin-top: 8px; }
-    .year-block:first-of-type { page-break-before: auto; }
-    .year-title { font-size: 14px; margin: 0 0 10px; padding-bottom: 6px; border-bottom: 2px solid #2563eb; page-break-after: avoid; }
     .foot { margin-top: 12px; color: #666; font-size: 10px; }
     @media print {
       .no-print { display: none !important; }
       body { padding: 0; }
       .chart-block img { max-height: 240px; }
       .chart-block.wide img { max-height: 260px; }
-      .year-block { page-break-before: always; }
-      .year-block:first-of-type { page-break-before: auto; }
     }
-    ${extra}
-  `;
-}
-
-function pdfKpisHtml(resumo) {
-  return `<div class="kpis">
+  </style>
+</head>
+<body>
+  <div class="no-print" style="margin-bottom:12px">
+    <button onclick="window.print()" style="padding:8px 14px;font-weight:700;cursor:pointer;border:0;border-radius:8px;background:#2563eb;color:#fff">
+      Imprimir / Salvar PDF
+    </button>
+  </div>
+  <h1>Avaliação Continua de Aprendizagem — CICLO I E CICLO II</h1>
+  <p class="sub">Secretaria Municipal de Educação - SEMED · São José da Tapera - AL</p>
+  <p class="sub">Relatório gerado em ${geradoEm}</p>
+  <div class="meta">${filtros.map((f) => `<span>${f}</span>`).join("")}</div>
+  <div class="kpis">
     <div class="kpi"><span>Turmas</span><strong>${fmt(resumo.turmas)}</strong></div>
     <div class="kpi"><span>Previstos</span><strong>${fmt(resumo.previstos)}</strong></div>
     <div class="kpi"><span>Avaliados</span><strong>${fmt(resumo.avaliados)}</strong></div>
@@ -1131,47 +1183,15 @@ function pdfKpisHtml(resumo) {
     <div class="kpi"><span>Defasagem</span><strong class="def">${fmt(resumo.defasagem)}</strong></div>
     <div class="kpi"><span>Intermediário</span><strong class="int">${fmt(resumo.intermediario)}</strong></div>
     <div class="kpi"><span>Adequado</span><strong class="ade">${fmt(resumo.adequado)}</strong></div>
-  </div>`;
-}
-
-function sortRowsComplete(rows) {
-  return [...rows].sort((a, b) => {
-    const esc = a.escola.localeCompare(b.escola, "pt-BR");
-    if (esc) return esc;
-    const disc = a.disciplina.localeCompare(b.disciplina);
-    if (disc) return disc;
-    return ordenarTurmas(a.turma, b.turma);
-  });
-}
-
-function pdfTableRowsHtml(rows, { sortFn = sortedRows } = {}) {
-  return sortFn(rows)
-    .map((row) => {
-      const b = blocoAtivo(row) || {};
-      const pred = predominante(b);
-      return `<tr>
-        <td>${anoLabel(row.ano)}</td>
-        <td>${discLabel(row.disciplina)}</td>
-        <td>${formatSchoolLabel(row.escola)}</td>
-        <td>${row.turma}</td>
-        <td class="num">${fmt(b.previstos || row.alunos || 0)}</td>
-        <td class="num">${fmt(b.avaliados || 0)}</td>
-        <td class="num">${fmtPct(b.participacao || 0)}</td>
-        <td class="num">${fmtPct(b.acertoTotal || 0)}</td>
-        <td class="num def">${fmt(b.defasagem || 0)}</td>
-        <td class="num int">${fmt(b.intermediario || 0)}</td>
-        <td class="num ade">${fmt(b.adequado || 0)}</td>
-        <td class="num">${pred ? pred.short : "—"}</td>
-      </tr>`;
-    })
-    .join("");
-}
-
-function pdfTableHtml(rows, title, options = {}) {
-  const { sortFn = sortedRows, showTitle = true } = options;
-  const tableRows = pdfTableRowsHtml(rows, { sortFn });
-  const titleHtml = showTitle ? `<h2 class="section-title">${title}</h2>\n  ` : "";
-  return `${titleHtml}<table>
+  </div>
+  <div class="charts-grid">
+    ${chartBlock("Ciclo I × Ciclo II", imgComparativo)}
+    ${chartBlock("Distribuição por nível", imgDonut)}
+  </div>
+  ${chartBlock("Composição por escola", imgEscolas, true)}
+  ${chartBlock("Desempenho por habilidade", imgHabilidades, true)}
+  <h2 class="section-title">Turmas filtradas (${fmt(sorted.length)})</h2>
+  <table>
     <thead>
       <tr>
         <th>Ano</th>
@@ -1189,133 +1209,26 @@ function pdfTableHtml(rows, title, options = {}) {
       </tr>
     </thead>
     <tbody>
-      ${tableRows || `<tr><td colspan="12">Nenhum registro.</td></tr>`}
+      ${tableRows || `<tr><td colspan="12">Nenhum registro para os filtros selecionados.</td></tr>`}
     </tbody>
-  </table>`;
-}
+  </table>
+  <p class="foot">Fonte: painel Avaliação Continua de Aprendizagem. Use “Salvar como PDF” na impressão do navegador.</p>
+  <script>
+    window.addEventListener("load", function () {
+      setTimeout(function () { window.focus(); window.print(); }, 350);
+    });
+  </script>
+</body>
+</html>`;
 
-function openPrintWindow(html) {
   const win = window.open("", "_blank");
   if (!win) {
     alert("Permita pop-ups para gerar o PDF de impressão.");
-    return false;
+    return;
   }
   win.document.open();
   win.document.write(html);
   win.document.close();
-  return true;
-}
-
-function pdfDocumentShell({ title, body, autoPrint = true }) {
-  return `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <title>${title}</title>
-  <style>${pdfBaseStyles()}</style>
-</head>
-<body>
-  <div class="no-print" style="margin-bottom:12px">
-    <button onclick="window.print()" style="padding:8px 14px;font-weight:700;cursor:pointer;border:0;border-radius:8px;background:#2563eb;color:#fff">
-      Imprimir / Salvar PDF
-    </button>
-  </div>
-  ${body}
-  <p class="foot">Fonte: painel Avaliação Continua de Aprendizagem. Use “Salvar como PDF” na impressão do navegador.</p>
-  ${autoPrint ? `<script>
-    window.addEventListener("load", function () {
-      setTimeout(function () { window.focus(); window.print(); }, 350);
-    });
-  </script>` : ""}
-</body>
-</html>`;
-}
-
-function dadosCompletosPdf() {
-  return DADOS.filter((row) => turmaLetraValida(row.turma));
-}
-
-function exportPdfCompleto() {
-  const geradoEm = pdfGeradoEm();
-  const rows = dadosCompletosPdf();
-  const resumoGeral = resumoAgg(rows);
-  const anos = ["6", "7", "8", "9"];
-
-  const yearSections = anos
-    .map((ano) => {
-      const yearRows = rows.filter((row) => String(row.ano) === ano);
-      if (!yearRows.length) return "";
-      const resumo = resumoAgg(yearRows);
-      return `<section class="year-block">
-        <h2 class="year-title">${anoLabel(ano)} · ${fmt(yearRows.length)} turma${yearRows.length === 1 ? "" : "s"}</h2>
-        ${pdfKpisHtml(resumo)}
-        ${pdfTableHtml(yearRows, "", { sortFn: sortRowsComplete, showTitle: false })}
-      </section>`;
-    })
-    .join("");
-
-  const body = `
-  <h1>Avaliação Continua de Aprendizagem — Relatório completo</h1>
-  <p class="sub">Secretaria Municipal de Educação - SEMED · São José da Tapera - AL</p>
-  <p class="sub">Relatório completo gerado em ${geradoEm}</p>
-  <div class="meta">
-    <span>Todos os anos (6º ao 9º)</span>
-    <span>Todas as escolas</span>
-    <span>Período: ${periodoLabel()}</span>
-  </div>
-  <h2 class="section-title">Resumo geral</h2>
-  ${pdfKpisHtml(resumoGeral)}
-  ${yearSections}
-  `;
-
-  openPrintWindow(pdfDocumentShell({ title: "Avaliação Continua · Relatório completo", body }));
-}
-
-async function exportPdf(rows) {
-  const sorted = sortedRows(rows);
-  const resumo = resumoAgg(sorted);
-  const filtros = filtrosAtivosLabels();
-  const geradoEm = pdfGeradoEm();
-
-  const prevTheme = currentTheme();
-  const prevView = state.view;
-  const dash = document.getElementById("viewDashboard");
-  const wasHidden = dash?.hidden;
-
-  // Tema claro + dashboard visível para capturar gráficos legíveis na impressão
-  applyTheme("light");
-  setView("dashboard");
-  if (dash) dash.hidden = false;
-  render();
-  await waitFrames(3);
-  await new Promise((r) => setTimeout(r, 120));
-
-  const imgComparativo = captureChartImage("chartComparativo");
-  const imgDonut = captureChartImage("chartDonut");
-  const imgEscolas = captureChartImage("chartEscolas");
-  const imgHabilidades = captureChartImage("chartHabilidades");
-
-  applyTheme(prevTheme);
-  setView(prevView);
-  if (dash && wasHidden && prevView !== "dashboard") dash.hidden = true;
-  render();
-
-  const body = `
-  <h1>Avaliação Continua de Aprendizagem — CICLO I E CICLO II</h1>
-  <p class="sub">Secretaria Municipal de Educação - SEMED · São José da Tapera - AL</p>
-  <p class="sub">Relatório gerado em ${geradoEm}</p>
-  <div class="meta">${filtros.map((f) => `<span>${f}</span>`).join("")}</div>
-  ${pdfKpisHtml(resumo)}
-  <div class="charts-grid">
-    ${chartBlock("Ciclo I × Ciclo II", imgComparativo)}
-    ${chartBlock("Distribuição por nível", imgDonut)}
-  </div>
-  ${chartBlock("Composição por escola", imgEscolas, true)}
-  ${chartBlock("Desempenho por habilidade", imgHabilidades, true)}
-  ${pdfTableHtml(sorted, `Turmas filtradas (${fmt(sorted.length)})`)}
-  `;
-
-  openPrintWindow(pdfDocumentShell({ title: "Avaliação Continua · Relatório", body, autoPrint: false }));
 }
 
 function resetAll() {
@@ -1358,10 +1271,7 @@ function bindEvents() {
   document.getElementById("btnTheme")?.addEventListener("click", toggleTheme);
   document.getElementById("btnExport")?.addEventListener("click", () => exportCsv(rowsBase()));
   document.addEventListener("click", (e) => {
-    if (e.target.closest(".btn-pdf")) {
-      exportPdfCompleto();
-      exportPdf(rowsBase());
-    }
+    if (e.target.closest(".btn-pdf")) exportPdf(rowsBase());
   });
   document.getElementById("pagePrev")?.addEventListener("click", () => {
     state.page -= 1;
