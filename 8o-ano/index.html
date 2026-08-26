@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../styles.css?v=8" />
+  <link rel="stylesheet" href="../styles.css?v=9" />
   <script>
     window.__ANO_PAGINA__ = "8";
     (function () {
@@ -105,6 +105,9 @@
               <option value="comparativo">Comparativo</option>
             </select>
           </label>
+          <div class="filter-actions">
+            <button class="btn btn-pdf" id="btnExportPdfTop" type="button" title="Gerar PDF dos dados filtrados">Gerar PDF</button>
+          </div>
         </div>
       </section>
 
@@ -149,7 +152,10 @@
         <article class="card table-card">
           <div class="table-toolbar">
             <div><strong id="tableCount">0 turmas</strong><span class="muted"> · 8º ano</span></div>
-            <div class="table-actions"><button class="btn" id="btnExport">Exportar CSV</button></div>
+            <div class="table-actions">
+              <button class="btn btn-pdf" id="btnExportPdf" type="button" title="Gerar PDF dos dados filtrados">Gerar PDF</button>
+              <button class="btn" id="btnExport" type="button">Exportar CSV</button>
+            </div>
           </div>
           <div class="table-scroll">
             <table>
@@ -184,6 +190,6 @@
 
   <script src="../vendor/chart.umd.min.js"></script>
   <script src="../dados.js?v=5"></script>
-  <script src="../app.js?v=17"></script>
+  <script src="../app.js?v=18"></script>
 </body>
 </html>

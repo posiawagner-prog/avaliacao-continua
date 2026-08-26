@@ -321,24 +321,31 @@ function pillHtml(delta, invert = false) {
 
 function renderChips() {
   const chips = document.getElementById("chips");
+  if (!chips) return;
   const items = [];
-  if (state.ano) items.push({ key: "ano", label: anoLabel(state.ano) });
+  // Nas páginas de ano, o ano já é o contexto da página — só vira chip no painel geral.
+  if (state.ano && !ANO_PAGINA) items.push({ key: "ano", label: anoLabel(state.ano) });
   if (state.disciplina) items.push({ key: "disciplina", label: discLabel(state.disciplina) });
   if (state.escola) items.push({ key: "escola", label: formatSchoolLabel(state.escola) });
   if (state.turma) items.push({ key: "turma", label: `Turma ${state.turma}` });
   if (state.nivel) items.push({ key: "nivel", label: nivelLabel(state.nivel) });
-  if (!items.length) {
+
+  const hasFilters = items.length > 0 || !!state.search.trim();
+  if (!hasFilters) {
     chips.hidden = true;
     chips.innerHTML = "";
     return;
   }
+
+  const pdfBtn = `<button type="button" class="btn btn-pdf" id="btnExportPdfChips" title="Gerar PDF dos dados filtrados">Gerar PDF</button>`;
   chips.hidden = false;
-  chips.innerHTML = items
-    .map(
-      (i) =>
-        `<button type="button" class="chip" data-clear="${i.key}">${i.label} <span aria-hidden="true">×</span></button>`
-    )
-    .join("");
+  chips.innerHTML =
+    items
+      .map(
+        (i) =>
+          `<button type="button" class="chip" data-clear="${i.key}">${i.label} <span aria-hidden="true">×</span></button>`
+      )
+      .join("") + pdfBtn;
 }
 
 function renderKPIs(rows) {
@@ -988,6 +995,161 @@ function exportCsv(rows) {
   URL.revokeObjectURL(url);
 }
 
+function periodoLabel() {
+  if (state.periodo === "entrada") return "Ciclo I - Entrada";
+  if (state.periodo === "comparativo") return "Comparativo";
+  return "Ciclo II - Percurso";
+}
+
+function filtrosAtivosLabels() {
+  const items = [];
+  items.push(`Ano: ${anoLabel(state.ano)}`);
+  items.push(`Disciplina: ${discLabel(state.disciplina)}`);
+  items.push(`Escola: ${state.escola ? formatSchoolLabel(state.escola) : "Todas"}`);
+  items.push(`Turma: ${state.turma || "Todas"}`);
+  items.push(`Período: ${periodoLabel()}`);
+  if (state.nivel) items.push(`Nível: ${nivelLabel(state.nivel)}`);
+  if (state.search.trim()) items.push(`Busca: ${state.search.trim()}`);
+  return items;
+}
+
+function resumoAgg(rows) {
+  const atual = isComparativo() ? aggregate(rows, "percurso") : aggregate(rows, periodoUnico());
+  const previstos = atual.previstos || rows.reduce((acc, r) => acc + (r.alunos || 0), 0);
+  return {
+    turmas: rows.length,
+    previstos,
+    avaliados: atual.avaliados,
+    participacao: pct(atual.avaliados, previstos || atual.previstos),
+    acerto: acertoMedio(atual),
+    defasagem: atual.defasagem,
+    intermediario: atual.intermediario,
+    adequado: atual.adequado,
+  };
+}
+
+function exportPdf(rows) {
+  const sorted = sortedRows(rows);
+  const resumo = resumoAgg(sorted);
+  const filtros = filtrosAtivosLabels();
+  const geradoEm = new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date());
+
+  const tableRows = sorted
+    .map((row) => {
+      const b = blocoAtivo(row) || {};
+      const pred = predominante(b);
+      return `<tr>
+        <td>${anoLabel(row.ano)}</td>
+        <td>${discLabel(row.disciplina)}</td>
+        <td>${formatSchoolLabel(row.escola)}</td>
+        <td>${row.turma}</td>
+        <td class="num">${fmt(b.previstos || row.alunos || 0)}</td>
+        <td class="num">${fmt(b.avaliados || 0)}</td>
+        <td class="num">${fmtPct(b.participacao || 0)}</td>
+        <td class="num">${fmtPct(b.acertoTotal || 0)}</td>
+        <td class="num def">${fmt(b.defasagem || 0)}</td>
+        <td class="num int">${fmt(b.intermediario || 0)}</td>
+        <td class="num ade">${fmt(b.adequado || 0)}</td>
+        <td class="num">${pred ? pred.short : "—"}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Avaliação Continua · Relatório</title>
+  <style>
+    @page { size: A4 landscape; margin: 12mm; }
+    * { box-sizing: border-box; }
+    body { font-family: "Segoe UI", Arial, sans-serif; color: #141418; margin: 0; padding: 0; font-size: 11px; }
+    h1 { font-size: 16px; margin: 0 0 4px; }
+    h2 { font-size: 13px; margin: 16px 0 8px; }
+    .sub { color: #555; margin: 0 0 12px; }
+    .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 12px; }
+    .meta span { background: #f2f3f7; border-radius: 6px; padding: 4px 8px; }
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+    .kpi { border: 1px solid #d8dbe3; border-radius: 8px; padding: 8px 10px; }
+    .kpi strong { display: block; font-size: 15px; margin-top: 2px; }
+    .kpi span { color: #666; font-size: 10px; text-transform: uppercase; letter-spacing: .03em; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #cfd3dc; padding: 5px 6px; text-align: left; vertical-align: top; }
+    th { background: #eef0f5; font-size: 10px; }
+    td.num, th.num { text-align: center; white-space: nowrap; }
+    td.def { color: #c62828; font-weight: 600; }
+    td.int { color: #ef6c00; font-weight: 600; }
+    td.ade { color: #2e7d32; font-weight: 600; }
+    .foot { margin-top: 12px; color: #666; font-size: 10px; }
+    @media print {
+      .no-print { display: none !important; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print" style="margin-bottom:12px">
+    <button onclick="window.print()" style="padding:8px 14px;font-weight:700;cursor:pointer;border:0;border-radius:8px;background:#2563eb;color:#fff">
+      Imprimir / Salvar PDF
+    </button>
+  </div>
+  <h1>Avaliação Continua de Aprendizagem — CICLO I E CICLO II</h1>
+  <p class="sub">Prefeitura de São José da Tapera · SEMED · Relatório gerado em ${geradoEm}</p>
+  <div class="meta">${filtros.map((f) => `<span>${f}</span>`).join("")}</div>
+  <div class="kpis">
+    <div class="kpi"><span>Turmas</span><strong>${fmt(resumo.turmas)}</strong></div>
+    <div class="kpi"><span>Previstos</span><strong>${fmt(resumo.previstos)}</strong></div>
+    <div class="kpi"><span>Avaliados</span><strong>${fmt(resumo.avaliados)}</strong></div>
+    <div class="kpi"><span>Participação</span><strong>${fmtPct(resumo.participacao)}</strong></div>
+    <div class="kpi"><span>Acerto total</span><strong>${fmtPct(resumo.acerto)}</strong></div>
+    <div class="kpi"><span>Defasagem</span><strong>${fmt(resumo.defasagem)}</strong></div>
+    <div class="kpi"><span>Intermediário</span><strong>${fmt(resumo.intermediario)}</strong></div>
+    <div class="kpi"><span>Adequado</span><strong>${fmt(resumo.adequado)}</strong></div>
+  </div>
+  <h2>Turmas filtradas (${fmt(sorted.length)})</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Ano</th>
+        <th>Disciplina</th>
+        <th>Escola</th>
+        <th>Turma</th>
+        <th class="num">Previstos</th>
+        <th class="num">Avaliados</th>
+        <th class="num">Participação %</th>
+        <th class="num">Acerto %</th>
+        <th class="num">Defasagem</th>
+        <th class="num">Intermediário</th>
+        <th class="num">Adequado</th>
+        <th class="num">Perfil</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${tableRows || `<tr><td colspan="12">Nenhum registro para os filtros selecionados.</td></tr>`}
+    </tbody>
+  </table>
+  <p class="foot">Fonte: painel Avaliação Continua de Aprendizagem. Use “Salvar como PDF” na impressão do navegador.</p>
+  <script>
+    window.addEventListener("load", function () {
+      setTimeout(function () { window.focus(); window.print(); }, 250);
+    });
+  </script>
+</body>
+</html>`;
+
+  const win = window.open("", "_blank");
+  if (!win) {
+    alert("Permita pop-ups para gerar o PDF de impressão.");
+    return;
+  }
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+}
+
 function resetAll() {
   state.disciplina = "";
   state.escola = "";
@@ -1027,6 +1189,9 @@ function bindEvents() {
   document.getElementById("btnResetAll")?.addEventListener("click", resetAll);
   document.getElementById("btnTheme")?.addEventListener("click", toggleTheme);
   document.getElementById("btnExport")?.addEventListener("click", () => exportCsv(rowsBase()));
+  document.addEventListener("click", (e) => {
+    if (e.target.closest(".btn-pdf")) exportPdf(rowsBase());
+  });
   document.getElementById("pagePrev")?.addEventListener("click", () => {
     state.page -= 1;
     render();
