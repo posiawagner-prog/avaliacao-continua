@@ -36,6 +36,7 @@ const state = {
 const charts = {};
 const PAGE_SIZE = 10;
 const THEME_KEY = "aca-theme-all";
+const PDF_EXPORT_DPR = 4;
 
 function emptyAgg() {
   return {
@@ -1029,8 +1030,9 @@ function resumoAgg(rows) {
 }
 
 function captureChartImage(id) {
-  const canvas = document.getElementById(id);
-  if (!canvas || !canvas.width || !canvas.height) return "";
+  const chart = charts[id];
+  const canvas = chart?.canvas || document.getElementById(id);
+  if (!canvas || !canvas.width || !canvas.height) return null;
   try {
     const out = document.createElement("canvas");
     out.width = canvas.width;
@@ -1038,19 +1040,37 @@ function captureChartImage(id) {
     const ctx = out.getContext("2d");
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, out.width, out.height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     ctx.drawImage(canvas, 0, 0);
-    return out.toDataURL("image/png");
+    return {
+      src: out.toDataURL("image/png"),
+      width: out.width,
+      height: out.height,
+    };
   } catch (e) {
     console.error("captureChartImage", id, e);
-    return "";
+    return null;
   }
 }
 
-function chartBlock(title, src, wide = false) {
-  if (!src) return "";
+async function preparePdfChartCapture() {
+  if (typeof Chart === "undefined") return () => {};
+  const prevDpr = Chart.defaults.devicePixelRatio;
+  Chart.defaults.devicePixelRatio = PDF_EXPORT_DPR;
+  render();
+  await waitFrames(4);
+  await new Promise((r) => setTimeout(r, 280));
+  return () => {
+    Chart.defaults.devicePixelRatio = prevDpr;
+  };
+}
+
+function chartBlock(title, image, wide = false) {
+  if (!image?.src) return "";
   return `<section class="chart-block${wide ? " wide" : ""}">
     <h2>${title}</h2>
-    <img src="${src}" alt="${title}" />
+    <img src="${image.src}" width="${image.width}" height="${image.height}" alt="${title}" />
   </section>`;
 }
 
@@ -1085,15 +1105,14 @@ async function exportPdf(rows) {
   applyTheme("light");
   setView("dashboard");
   if (dash) dash.hidden = false;
-  render();
-  await waitFrames(3);
-  await new Promise((r) => setTimeout(r, 120));
+  const restoreChartDpr = await preparePdfChartCapture();
 
   const imgComparativo = captureChartImage("chartComparativo");
   const imgDonut = captureChartImage("chartDonut");
   const imgEscolas = captureChartImage("chartEscolas");
   const imgHabilidades = captureChartImage("chartHabilidades");
 
+  restoreChartDpr();
   applyTheme(prevTheme);
   setView(prevView);
   if (dash && wasHidden && prevView !== "dashboard") dash.hidden = true;
@@ -1126,41 +1145,45 @@ async function exportPdf(rows) {
   <meta charset="UTF-8" />
   <title>Avaliação Continua · Relatório</title>
   <style>
-    @page { size: A4 landscape; margin: 10mm; }
-    * { box-sizing: border-box; }
-    body { font-family: "Segoe UI", Arial, sans-serif; color: #141418; margin: 0; padding: 8px; font-size: 11px; }
-    h1 { font-size: 16px; margin: 0 0 4px; }
-    h2 { font-size: 12px; margin: 0 0 8px; }
-    .sub { color: #555; margin: 0 0 10px; }
+    @page { size: A4 landscape; margin: 8mm; }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { font-family: "Segoe UI", Arial, sans-serif; color: #141418; margin: 0; padding: 10px; font-size: 12px; }
+    h1 { font-size: 18px; margin: 0 0 4px; }
+    h2 { font-size: 13px; margin: 0 0 8px; }
+    .sub { color: #555; margin: 0 0 10px; font-size: 11px; }
     .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-bottom: 12px; }
-    .meta span { background: #f2f3f7; border-radius: 6px; padding: 4px 8px; }
+    .meta span { background: #f2f3f7; border-radius: 6px; padding: 4px 8px; font-size: 11px; }
     .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
     .kpi { border: 1px solid #d8dbe3; border-radius: 8px; padding: 8px 10px; }
-    .kpi strong { display: block; font-size: 15px; margin-top: 2px; }
+    .kpi strong { display: block; font-size: 16px; margin-top: 2px; }
     .kpi span { color: #666; font-size: 10px; text-transform: uppercase; letter-spacing: .03em; }
     .kpi .def { color: #c62828; }
     .kpi .int { color: #ef6c00; }
     .kpi .ade { color: #2e7d32; }
     .charts-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 12px; margin-bottom: 12px; page-break-inside: avoid; }
     .charts-row { display: grid; grid-template-columns: 1fr 1.2fr; gap: 12px; margin-bottom: 12px; page-break-inside: avoid; }
-    .chart-block { border: 1px solid #d8dbe3; border-radius: 10px; padding: 10px; background: #fff; }
+    .chart-block { border: 1px solid #d8dbe3; border-radius: 10px; padding: 10px; background: #fff; page-break-inside: avoid; }
     .chart-block.wide { grid-column: 1 / -1; margin-bottom: 12px; page-break-inside: avoid; }
-    .chart-block img { display: block; width: 100%; height: auto; max-height: 280px; object-fit: contain; }
-    .chart-block.wide img { max-height: 320px; }
+    .chart-block img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: none;
+      object-fit: contain;
+    }
     table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #cfd3dc; padding: 5px 6px; text-align: left; vertical-align: top; }
-    th { background: #eef0f5; font-size: 10px; }
+    th, td { border: 1px solid #cfd3dc; padding: 6px 7px; text-align: left; vertical-align: top; }
+    th { background: #eef0f5; font-size: 11px; }
     td.num, th.num { text-align: center; white-space: nowrap; }
     td.def { color: #c62828; font-weight: 600; }
     td.int { color: #ef6c00; font-weight: 600; }
     td.ade { color: #2e7d32; font-weight: 600; }
-    .section-title { font-size: 13px; margin: 16px 0 8px; page-break-after: avoid; }
+    .section-title { font-size: 14px; margin: 16px 0 8px; page-break-after: avoid; }
     .foot { margin-top: 12px; color: #666; font-size: 10px; }
     @media print {
       .no-print { display: none !important; }
-      body { padding: 0; }
-      .chart-block img { max-height: 240px; }
-      .chart-block.wide img { max-height: 260px; }
+      body { padding: 0; font-size: 11px; }
+      .chart-block img { max-height: none; width: 100%; }
     }
   </style>
 </head>
