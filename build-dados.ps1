@@ -18,7 +18,9 @@ function Normalize-School([string]$raw) {
 function Normalize-Turma([string]$turma) {
   $t = $turma.Trim()
   if ($t -match '\d\s*º?\s*ANO' -or $t -match '(?i)^\d+\s*ANO') { return "ÚNICA" }
-  if ($t -match '(?i)^unica$') { return "ÚNICA" }
+  if ($t -match '(?i)^unica$' -or $t -match '(?i)^única$') { return "ÚNICA" }
+  if (Is-Unica $t) { return "ÚNICA" }
+  if ($t -match '(?i)NICA$' -and $t -notmatch '^[A-Z]$') { return "ÚNICA" }
   return $t.ToUpper()
 }
 
